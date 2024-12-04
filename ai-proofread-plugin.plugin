@@ -1,0 +1,13 @@
+[Plugin]
+Name=AI Proofread Plugin
+Description=Adds a proofread button to the email composer
+Authors=Vadim Zaliva
+Version=1.0
+Website=https://github.com/vzaliva/ai-proofread-plugin
+Copyright=2024, Vadim Zaliva
+
+[Loader]
+Type=python3
+
+[Python]
+Module=ai_proofread_plugin
