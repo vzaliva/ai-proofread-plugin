@@ -1,7 +1,5 @@
 list(APPEND SOURCES
 	ai-proofread-plugin.c
-	m-calendar-ui.h
-	m-calendar-ui.c
 	m-mail-ui.h
 	m-mail-ui.c
 	m-msg-composer-extension.h
@@ -20,21 +18,18 @@ target_compile_definitions(ai-proofread-plugin PRIVATE
 
 target_compile_options(ai-proofread-plugin PUBLIC
 	${EVOLUTION_SHELL_CFLAGS}
-	${EVOLUTION_CALENDAR_CFLAGS}
 	${EVOLUTION_MAIL_CFLAGS}
 	${LIBECAL_CFLAGS}
 )
 
 target_include_directories(ai-proofread-plugin PUBLIC
 	${EVOLUTION_SHELL_INCLUDE_DIRS}
-	${EVOLUTION_CALENDAR_INCLUDE_DIRS}
 	${EVOLUTION_MAIL_INCLUDE_DIRS}
 	${LIBECAL_INCLUDE_DIRS}
 )
 
 target_link_libraries(ai-proofread-plugin
 	${EVOLUTION_SHELL_LDFLAGS}
-	${EVOLUTION_CALENDAR_LDFLAGS}
 	${EVOLUTION_MAIL_LDFLAGS}
 	${LIBECAL_LDFLAGS}
 )

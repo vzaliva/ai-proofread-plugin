@@ -23,7 +23,6 @@
 #include <shell/e-shell-view.h>
 
 #include "m-mail-ui.h"
-#include "m-calendar-ui.h"
 
 #include "m-shell-view-extension.h"
 
@@ -52,9 +51,9 @@ m_shell_extension_get_ui_definition (EShellView *shell_view,
 
 	if (g_strcmp0 (ui_manager_id, "org.gnome.evolution.mail") == 0)
 		m_mail_ui_init (ui_manager, shell_view, ui_definition);
-	else if (g_strcmp0 (ui_manager_id, "org.gnome.evolution.calendars") == 0)
+	/* else if (g_strcmp0 (ui_manager_id, "org.gnome.evolution.calendars") == 0)
 		m_calendar_ui_init (ui_manager, shell_view, ui_definition);
-	/* else if (g_strcmp0 (ui_manager_id, "org.gnome.evolution.tasks") == 0)
+	   else if (g_strcmp0 (ui_manager_id, "org.gnome.evolution.tasks") == 0)
 		m_tasks_ui_init (ui_manager, shell_view, ui_definition);
 	else if (g_strcmp0 (ui_manager_id, "org.gnome.evolution.memos") == 0)
 		m_memos_ui_init (ui_manager, shell_view, ui_definition);
