@@ -1,13 +1,7 @@
 list(APPEND SOURCES
 	ai-proofread-plugin.c
-	m-mail-ui.h
-	m-mail-ui.c
 	m-msg-composer-extension.h
 	m-msg-composer-extension.c
-	m-shell-view-extension.h
-	m-shell-view-extension.c
-	m-utils.h
-	m-utils.c
 )
 
 add_library(ai-proofread-plugin MODULE ${SOURCES})
