@@ -1,15 +1,15 @@
-# Evolution example-module build script
+# Evolution ai-proofread-plugin build script
 
-cmake_minimum_required(VERSION 2.8)
-cmake_policy(VERSION 2.6)
+cmake_minimum_required(VERSION 3.28)
+cmake_policy(VERSION 3.28)
 
-project(example-modules C)
+project(ai-proofread-plugin C)
 
 #
 # Base bits
 #
-set(GETTEXT_PACKAGE "example-module")
-set(RELEASE_NAME "Evolution example module.")
+set(GETTEXT_PACKAGE "ai-proofread-plugin")
+set(RELEASE_NAME "Evolution AI Proofread Plugin.")
 set(VERSION "0.0.1")
 set(VERSION_INFO "Release")
 set(LANGUAGE_SUPPORT_DIRECTORY ${CMAKE_INSTALL_PREFIX}/share/locale)

@@ -1,5 +1,5 @@
 list(APPEND SOURCES
-	example-module.c
+	ai-proofread-plugin.c
 	m-calendar-ui.h
 	m-calendar-ui.c
 	m-mail-ui.h
@@ -12,33 +12,33 @@ list(APPEND SOURCES
 	m-utils.c
 )
 
-add_library(example-module MODULE ${SOURCES})
+add_library(ai-proofread-plugin MODULE ${SOURCES})
 
-target_compile_definitions(example-module PRIVATE
-	G_LOG_DOMAIN=\"example-module\"
+target_compile_definitions(ai-proofread-plugin PRIVATE
+	G_LOG_DOMAIN=\"ai-proofread-plugin\"
 )
 
-target_compile_options(example-module PUBLIC
+target_compile_options(ai-proofread-plugin PUBLIC
 	${EVOLUTION_SHELL_CFLAGS}
 	${EVOLUTION_CALENDAR_CFLAGS}
 	${EVOLUTION_MAIL_CFLAGS}
 	${LIBECAL_CFLAGS}
 )
 
-target_include_directories(example-module PUBLIC
+target_include_directories(ai-proofread-plugin PUBLIC
 	${EVOLUTION_SHELL_INCLUDE_DIRS}
 	${EVOLUTION_CALENDAR_INCLUDE_DIRS}
 	${EVOLUTION_MAIL_INCLUDE_DIRS}
 	${LIBECAL_INCLUDE_DIRS}
 )
 
-target_link_libraries(example-module
+target_link_libraries(ai-proofread-plugin
 	${EVOLUTION_SHELL_LDFLAGS}
 	${EVOLUTION_CALENDAR_LDFLAGS}
 	${EVOLUTION_MAIL_LDFLAGS}
 	${LIBECAL_LDFLAGS}
 )
 
-install(TARGETS example-module
+install(TARGETS ai-proofread-plugin
 	DESTINATION ${EVOLUTION_MODULE_DIR}
 )
