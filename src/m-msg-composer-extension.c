@@ -47,10 +47,10 @@ action_msg_composer_cb (GtkAction *action,
 
 static GtkActionEntry msg_composer_entries[] = {
 	{ "my-msg-composer-action",
-	  "document-new",
-	  N_("M_y Message Composer Action..."),
+	  "tools-check-spelling",
+	  N_("AI _Proofread..."),
 	  NULL,
-	  N_("My Message Composer Action"),
+	  N_("AI Proofread"),
 	  G_CALLBACK (action_msg_composer_cb) }
 };
 
