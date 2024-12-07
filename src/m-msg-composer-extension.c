@@ -26,6 +26,15 @@
 
 #include "m-msg-composer-extension.h"
 
+// Temporary debug flag
+#define M_MSG_COMPOSER_DEBUG 1
+
+#ifdef M_MSG_COMPOSER_DEBUG
+#define DEBUG_MSG(x...) g_print (G_STRLOC ": " x)
+#else
+#define DEBUG_MSG(x...)
+#endif
+
 struct _MMsgComposerExtensionPrivate {
 	gint dummy;
 };
@@ -42,21 +51,43 @@ msg_text_cb (GObject *source_object,
     EContentEditorContentHash *content_hash;
     gchar *content, *new_content;
     GError *error = NULL;
-    
+    GDestroyNotify destroy_func = NULL;
+
+    DEBUG_MSG("Getting content finish\n");
     content_hash = e_content_editor_get_content_finish (cnt_editor, result, &error);
     if (error) {
+        DEBUG_MSG("Error getting content: %s\n", error->message);
         g_error_free (error);
         return;
     }
     
-    content = g_hash_table_lookup (content_hash, "text/plain");
+    if (!content_hash) {
+        DEBUG_MSG("No content hash returned\n");
+        return;
+    }
+
+    #ifdef M_MSG_COMPOSER_DEBUG
+    DEBUG_MSG("Hash table size: %d\n", g_hash_table_size(content_hash));
+    DEBUG_MSG("Has text/html: %d\n", g_hash_table_contains(content_hash, "text/html"));
+    DEBUG_MSG("Has text/plain: %d\n", g_hash_table_contains(content_hash, "text/plain"));
+    #endif
+
+    content = e_content_editor_util_steal_content_data (content_hash, 
+        E_CONTENT_EDITOR_GET_RAW_BODY_HTML, &destroy_func);
+    
+    DEBUG_MSG("Retrieved content length: %d\n", content ? (int)strlen(content) : 0);
     
     new_content = g_strdup_printf ("Proofread!\n%s", content ? content : "");
+    DEBUG_MSG("Created new content\n");
     
-    /* Set the modified content back */
-    e_content_editor_insert_content (cnt_editor, new_content, E_CONTENT_EDITOR_INSERT_REPLACE_ALL);
+    e_content_editor_insert_content (
+        cnt_editor,
+        new_content,
+        E_CONTENT_EDITOR_INSERT_TEXT_PLAIN | E_CONTENT_EDITOR_INSERT_REPLACE_ALL
+    );
 
-    g_hash_table_unref (content_hash);
+	e_content_editor_util_free_content_hash (content_hash);
+    //g_hash_table_unref (content_hash);
     g_free (new_content);
 }
 
@@ -64,6 +95,8 @@ static void
 action_msg_composer_cb (GtkAction *action,
 			MMsgComposerExtension *msg_composer_ext)
 {
+	DEBUG_MSG("Action callback triggered\n");
+	
 	EMsgComposer *composer;
 	EHTMLEditor *editor;	
 	EContentEditor *cnt_editor;
@@ -72,10 +105,18 @@ action_msg_composer_cb (GtkAction *action,
 
 	composer = E_MSG_COMPOSER (e_extension_get_extensible (E_EXTENSION (msg_composer_ext)));
 	editor = e_msg_composer_get_editor (composer);
-	cnt_editor = E_CONTENT_EDITOR (editor);
+	cnt_editor = e_html_editor_get_content_editor (editor);
 
+	DEBUG_MSG("Getting content\n");
 	/* Get current content */
-	e_content_editor_get_content (cnt_editor, E_CONTENT_EDITOR_GET_RAW_BODY_PLAIN, NULL, NULL, msg_text_cb, cnt_editor);	
+	e_content_editor_get_content (
+		cnt_editor,
+		E_CONTENT_EDITOR_GET_RAW_BODY_HTML,
+		NULL,
+		NULL,
+		msg_text_cb,
+		cnt_editor
+	);	
 }
 
 static GtkActionEntry msg_composer_entries[] = {

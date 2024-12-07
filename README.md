@@ -13,6 +13,14 @@ $ cmake -DCMAKE_INSTALL_PREFIX=~/.local/share/evolution/modules \
 $ make && make install
 ```
 
+## Development
+
+To use under vscode first generate compile_commands.json:
+
+```
+$ cmake -DCMAKE_EXPORT_COMPILE_COMMANDS=ON .
+```
+
 ## License
 
 This plugin is open-source and licensed under the MIT License.
