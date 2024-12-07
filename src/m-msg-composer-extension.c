@@ -22,6 +22,7 @@
 #include <gtk/gtk.h>
 
 #include <composer/e-msg-composer.h>
+#include <evolution/e-util/e-util.h>
 
 #include "m-msg-composer-extension.h"
 
@@ -33,16 +34,48 @@ G_DEFINE_DYNAMIC_TYPE_EXTENDED (MMsgComposerExtension, m_msg_composer_extension,
 	G_ADD_PRIVATE_DYNAMIC (MMsgComposerExtension))
 
 static void
+msg_text_cb (GObject *source_object,
+             GAsyncResult *result,
+             gpointer user_data)
+{
+    EContentEditor *cnt_editor = E_CONTENT_EDITOR (source_object);
+    EContentEditorContentHash *content_hash;
+    gchar *content, *new_content;
+    GError *error = NULL;
+    
+    content_hash = e_content_editor_get_content_finish (cnt_editor, result, &error);
+    if (error) {
+        g_error_free (error);
+        return;
+    }
+    
+    content = g_hash_table_lookup (content_hash, "text/plain");
+    
+    new_content = g_strdup_printf ("Proofread!\n%s", content ? content : "");
+    
+    /* Set the modified content back */
+    e_content_editor_insert_content (cnt_editor, new_content, E_CONTENT_EDITOR_INSERT_REPLACE_ALL);
+
+    g_hash_table_unref (content_hash);
+    g_free (new_content);
+}
+
+static void
 action_msg_composer_cb (GtkAction *action,
 			MMsgComposerExtension *msg_composer_ext)
 {
 	EMsgComposer *composer;
-
+	EHTMLEditor *editor;	
+	EContentEditor *cnt_editor;
+	
 	g_return_if_fail (M_IS_MSG_COMPOSER_EXTENSION (msg_composer_ext));
 
 	composer = E_MSG_COMPOSER (e_extension_get_extensible (E_EXTENSION (msg_composer_ext)));
+	editor = e_msg_composer_get_editor (composer);
+	cnt_editor = E_CONTENT_EDITOR (editor);
 
-	g_print ("%s: for composer '%s'\n", G_STRFUNC, gtk_window_get_title (GTK_WINDOW (composer)));
+	/* Get current content */
+	e_content_editor_get_content (cnt_editor, E_CONTENT_EDITOR_GET_RAW_BODY_PLAIN, NULL, NULL, msg_text_cb, cnt_editor);	
 }
 
 static GtkActionEntry msg_composer_entries[] = {
