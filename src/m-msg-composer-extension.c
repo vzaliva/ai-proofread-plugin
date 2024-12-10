@@ -38,13 +38,14 @@
 
 struct _MMsgComposerExtensionPrivate {
 	JsonArray *prompts;  // Array of prompts loaded from config
+	gchar *chatgpt_api_key;     // OpenAI API key
 };
 
 G_DEFINE_DYNAMIC_TYPE_EXTENDED (MMsgComposerExtension, m_msg_composer_extension, E_TYPE_EXTENSION, 0,
 	G_ADD_PRIVATE_DYNAMIC (MMsgComposerExtension))
 
 static JsonArray *
-load_prompts_config(void)
+load_prompts(void)
 {
 	const gchar *config_dir = e_get_user_config_dir();	
 	gchar *config_path = g_build_filename(config_dir, "ai-proofread", "prompts.json", NULL);
@@ -53,7 +54,7 @@ load_prompts_config(void)
 	JsonArray *prompts = NULL;
 	GError *error = NULL;
 
-	DEBUG_MSG("Loading config from: %s\n", config_path);
+	DEBUG_MSG("Loading prompts from: %s\n", config_path);
 
 	parser = json_parser_new();
 	if (json_parser_load_from_file(parser, config_path, &error)) {
@@ -63,7 +64,7 @@ load_prompts_config(void)
 		}
 		DEBUG_MSG("Prompts loaded: %d\n", json_array_get_length(prompts));
 	} else {
-		DEBUG_MSG("Error loading config: %s\n", error->message);
+		DEBUG_MSG("Error loading prompts: %s\n", error->message);
 		g_error_free(error);
 	}
 
@@ -71,6 +72,52 @@ load_prompts_config(void)
 	g_free(config_path);
 
 	return prompts ? prompts : json_array_new();
+}
+
+static gchar *
+load_api_key(void)
+{
+    const gchar *home_dir = g_get_home_dir();
+    gchar *authinfo_path = g_build_filename(home_dir, ".authinfo", NULL);
+    gchar *content = NULL;
+    gchar *api_key = NULL;
+    GError *error = NULL;
+
+    DEBUG_MSG("Loading authinfo from: %s\n", authinfo_path);
+
+    if (g_file_get_contents(authinfo_path, &content, NULL, &error)) {
+        gchar **lines = g_strsplit(content, "\n", -1);
+        for (gint i = 0; lines[i] != NULL; i++) {
+            // Skip empty lines
+            if (lines[i][0] == '\0') continue;
+
+            gchar **tokens = g_strsplit(lines[i], " ", -1);
+            gint token_count = g_strv_length(tokens);
+
+            // Look for line matching: machine api.openai.com login apikey password <key>
+            if (token_count >= 6 &&
+                g_strcmp0(tokens[0], "machine") == 0 &&
+                g_strcmp0(tokens[1], "api.openai.com") == 0 &&
+                g_strcmp0(tokens[2], "login") == 0 &&
+                g_strcmp0(tokens[3], "apikey") == 0 &&
+                g_strcmp0(tokens[4], "password") == 0) {
+                    api_key = g_strdup(tokens[5]);
+                    DEBUG_MSG("Found API key\n");
+                    g_strfreev(tokens);
+                    break;
+            }
+            g_strfreev(tokens);
+        }
+        g_strfreev(lines);
+        g_free(content);
+    } else {
+        DEBUG_MSG("Error loading authinfo: %s\n", error->message);
+        g_error_free(error);
+    }
+
+    g_free(authinfo_path);
+
+    return api_key;
 }
 
 static void
@@ -120,6 +167,11 @@ msg_text_cb (GObject *source_object,
 	e_content_editor_util_free_content_hash (content_hash);
     //g_hash_table_unref (content_hash);
     g_free (new_content);
+    // Need to free 'content' if destroy_func is NULL
+    if (content && !destroy_func)
+        g_free(content);
+    else if (content && destroy_func)
+        destroy_func(content);
 }
 
 static void
@@ -194,6 +246,11 @@ m_msg_composer_extension_add_ui (MMsgComposerExtension *msg_composer_ext,
         DEBUG_MSG("No prompts configured, skipping UI creation\n");
         return;
     }
+
+    if(!msg_composer_ext->priv->chatgpt_api_key) {
+        DEBUG_MSG("No API key configured, skipping UI creation\n");
+        return;
+    }   
 
     GString *ui_def;
     EHTMLEditor *html_editor;
@@ -354,7 +411,8 @@ static void
 m_msg_composer_extension_init (MMsgComposerExtension *msg_composer_ext)
 {
 	msg_composer_ext->priv = m_msg_composer_extension_get_instance_private (msg_composer_ext);
-	msg_composer_ext->priv->prompts = load_prompts_config();
+	msg_composer_ext->priv->prompts = load_prompts();
+	msg_composer_ext->priv->chatgpt_api_key = load_api_key();
 }
 
 static void
@@ -366,6 +424,9 @@ m_msg_composer_extension_dispose (GObject *object)
         json_array_unref(msg_composer_ext->priv->prompts);
         msg_composer_ext->priv->prompts = NULL;
     }
+
+    g_free(msg_composer_ext->priv->chatgpt_api_key);
+    msg_composer_ext->priv->chatgpt_api_key = NULL;
 
     /* Chain up to parent's method */
     G_OBJECT_CLASS (m_msg_composer_extension_parent_class)->dispose (object);
