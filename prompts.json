@@ -1,0 +1,10 @@
+[
+    {
+        "name": "Grammar",
+        "prompt": "Please check grammar and spelling"
+    },
+    {
+        "name": "Formal",
+        "prompt": "Make this email more formal"
+    }
+]

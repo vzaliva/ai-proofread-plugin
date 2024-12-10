@@ -20,6 +20,7 @@
 
 #include <glib/gi18n-lib.h>
 #include <gtk/gtk.h>
+#include <json-glib/json-glib.h>
 
 #include <composer/e-msg-composer.h>
 #include <evolution/e-util/e-util.h>
@@ -36,11 +37,41 @@
 #endif
 
 struct _MMsgComposerExtensionPrivate {
-	gint dummy;
+	JsonArray *prompts;  // Array of prompts loaded from config
 };
 
 G_DEFINE_DYNAMIC_TYPE_EXTENDED (MMsgComposerExtension, m_msg_composer_extension, E_TYPE_EXTENSION, 0,
 	G_ADD_PRIVATE_DYNAMIC (MMsgComposerExtension))
+
+static JsonArray *
+load_prompts_config(void)
+{
+	const gchar *config_dir = e_get_user_config_dir();	
+	gchar *config_path = g_build_filename(config_dir, "ai-proofread", "prompts.json", NULL);
+	JsonParser *parser;
+	JsonNode *root;
+	JsonArray *prompts = NULL;
+	GError *error = NULL;
+
+	DEBUG_MSG("Loading config from: %s\n", config_path);
+
+	parser = json_parser_new();
+	if (json_parser_load_from_file(parser, config_path, &error)) {
+		root = json_parser_get_root(parser);
+		if (JSON_NODE_HOLDS_ARRAY(root)) {
+			prompts = json_array_ref(json_node_get_array(root));
+		}
+		DEBUG_MSG("Prompts loaded: %d\n", json_array_get_length(prompts));
+	} else {
+		DEBUG_MSG("Error loading config: %s\n", error->message);
+		g_error_free(error);
+	}
+
+	g_object_unref(parser);
+	g_free(config_path);
+
+	return prompts ? prompts : json_array_new();
+}
 
 static void
 msg_text_cb (GObject *source_object,
@@ -212,6 +243,21 @@ static void
 m_msg_composer_extension_init (MMsgComposerExtension *msg_composer_ext)
 {
 	msg_composer_ext->priv = m_msg_composer_extension_get_instance_private (msg_composer_ext);
+	msg_composer_ext->priv->prompts = load_prompts_config();
+}
+
+static void
+m_msg_composer_extension_dispose (GObject *object)
+{
+    MMsgComposerExtension *msg_composer_ext = M_MSG_COMPOSER_EXTENSION (object);
+    
+    if (msg_composer_ext->priv->prompts) {
+        json_array_unref(msg_composer_ext->priv->prompts);
+        msg_composer_ext->priv->prompts = NULL;
+    }
+
+    /* Chain up to parent's method */
+    G_OBJECT_CLASS (m_msg_composer_extension_parent_class)->dispose (object);
 }
 
 void
