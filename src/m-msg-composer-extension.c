@@ -185,15 +185,22 @@ static void
 m_msg_composer_extension_add_ui (MMsgComposerExtension *msg_composer_ext,
                                EMsgComposer *composer)
 {
+    g_return_if_fail (M_IS_MSG_COMPOSER_EXTENSION (msg_composer_ext));
+    g_return_if_fail (E_IS_MSG_COMPOSER (composer));
+
+    // Check if we have any prompts
+    if (!msg_composer_ext->priv->prompts || 
+        json_array_get_length(msg_composer_ext->priv->prompts) == 0) {
+        DEBUG_MSG("No prompts configured, skipping UI creation\n");
+        return;
+    }
+
     GString *ui_def;
     EHTMLEditor *html_editor;
     GtkActionGroup *action_group;
     GtkUIManager *ui_manager;
     GError *error = NULL;
     guint i, n_prompts;
-
-    g_return_if_fail (M_IS_MSG_COMPOSER_EXTENSION (msg_composer_ext));
-    g_return_if_fail (E_IS_MSG_COMPOSER (composer));
 
     html_editor = e_msg_composer_get_editor (composer);
     ui_manager = e_html_editor_get_ui_manager (html_editor);
