@@ -41,6 +41,11 @@ struct _MMsgComposerExtensionPrivate {
 	gchar *chatgpt_api_key;     // OpenAI API key
 };
 
+struct ProofreadContext {
+    EContentEditor *cnt_editor;
+    const gchar *prompt_id;
+};
+
 G_DEFINE_DYNAMIC_TYPE_EXTENDED (MMsgComposerExtension, m_msg_composer_extension, E_TYPE_EXTENSION, 0,
 	G_ADD_PRIVATE_DYNAMIC (MMsgComposerExtension))
 
@@ -125,13 +130,16 @@ msg_text_cb (GObject *source_object,
              GAsyncResult *result,
              gpointer user_data)
 {
-    EContentEditor *cnt_editor = E_CONTENT_EDITOR (source_object);
+    struct ProofreadContext *context = user_data;
+    EContentEditor *cnt_editor = context->cnt_editor;
+    const gchar *prompt_id = context->prompt_id;
+    
     EContentEditorContentHash *content_hash;
     gchar *content, *new_content;
     GError *error = NULL;
     GDestroyNotify destroy_func = NULL;
 
-    DEBUG_MSG("Getting content finish\n");
+    DEBUG_MSG("Getting content finish for prompt: %s\n", prompt_id);
     content_hash = e_content_editor_get_content_finish (cnt_editor, result, &error);
     if (error) {
         DEBUG_MSG("Error getting content: %s\n", error->message);
@@ -147,10 +155,10 @@ msg_text_cb (GObject *source_object,
     content = e_content_editor_util_steal_content_data (content_hash, 
         E_CONTENT_EDITOR_GET_RAW_BODY_HTML, &destroy_func);
     
-    DEBUG_MSG("Retrieved content length: %d\n", content ? (int)strlen(content) : 0);
     
-    new_content = g_strdup_printf ("<pre>Poofread!<pre>\n%s", content ? content : "");
-    DEBUG_MSG("Created new content\n");
+
+    //TODO: sent to CHATGPT and get back the proofread content
+    new_content = g_strdup_printf ("<pre>Poofread with <b>%s</b><pre>\n%s", prompt_id, content ? content : "");
     
     e_content_editor_insert_content (
         cnt_editor,
@@ -166,14 +174,16 @@ msg_text_cb (GObject *source_object,
         g_free(content);
     else if (content && destroy_func)
         destroy_func(content);
+
+    g_free(context); // Free the context struct
 }
 
 static void
 action_msg_composer_prompt_cb (GtkAction *action,
                              MMsgComposerExtension *msg_composer_ext)
 {
-    const gchar *prompt_name = gtk_action_get_name(action);
-    DEBUG_MSG("Action callback triggered for prompt: %s\n", prompt_name);
+    const gchar *prompt_id = gtk_action_get_name(action);
+    DEBUG_MSG("Action callback triggered for prompt: %s\n", prompt_id);
     
     EMsgComposer *composer;
     EHTMLEditor *editor;    
@@ -185,6 +195,11 @@ action_msg_composer_prompt_cb (GtkAction *action,
     editor = e_msg_composer_get_editor (composer);
     cnt_editor = e_html_editor_get_content_editor (editor);
 
+    // Create context to pass to callback
+    struct ProofreadContext *context = g_new(struct ProofreadContext, 1);
+    context->cnt_editor = cnt_editor;
+    context->prompt_id = prompt_id;
+
     DEBUG_MSG("Getting content\n");
     e_content_editor_get_content (
         cnt_editor,
@@ -192,7 +207,7 @@ action_msg_composer_prompt_cb (GtkAction *action,
         NULL,
         NULL,
         msg_text_cb,
-        cnt_editor
+        context
     );    
 }
 
@@ -201,10 +216,10 @@ run_button_clicked_cb (GtkButton *button,
                       MMsgComposerExtension *msg_composer_ext)
 {
     GtkComboBoxText *combo = g_object_get_data(G_OBJECT(button), "combo");
-    const gchar *active_id = gtk_combo_box_get_active_id(GTK_COMBO_BOX(combo));
+    const gchar *prompt_id = gtk_combo_box_get_active_id(GTK_COMBO_BOX(combo));
     
-    if (active_id) {
-        DEBUG_MSG("Run button clicked with active selection: %s\n", active_id);
+    if (prompt_id) {
+        DEBUG_MSG("Run button clicked with active selection: %s\n", prompt_id);
         
         EMsgComposer *composer;
         EHTMLEditor *editor;    
@@ -216,13 +231,18 @@ run_button_clicked_cb (GtkButton *button,
         editor = e_msg_composer_get_editor (composer);
         cnt_editor = e_html_editor_get_content_editor (editor);
 
+        // Create context to pass to callback
+        struct ProofreadContext *context = g_new(struct ProofreadContext, 1);
+        context->cnt_editor = cnt_editor;
+        context->prompt_id = prompt_id;
+
         e_content_editor_get_content (
             cnt_editor,
             E_CONTENT_EDITOR_GET_RAW_BODY_HTML,
             NULL,
             NULL,
             msg_text_cb,
-            cnt_editor
+            context
         );
     }
 }
