@@ -26,6 +26,7 @@
 #include <evolution/e-util/e-util.h>
 
 #include "m-msg-composer-extension.h"
+#include "m-chatgpt-api.h"
 
 // Temporary debug flag
 #define M_MSG_COMPOSER_DEBUG 1
@@ -44,6 +45,7 @@ struct _MMsgComposerExtensionPrivate {
 struct ProofreadContext {
     EContentEditor *cnt_editor;
     const gchar *prompt_id;
+    MMsgComposerExtension *extension;
 };
 
 G_DEFINE_DYNAMIC_TYPE_EXTENDED (MMsgComposerExtension, m_msg_composer_extension, E_TYPE_EXTENSION, 0,
@@ -133,6 +135,7 @@ msg_text_cb (GObject *source_object,
     struct ProofreadContext *context = user_data;
     EContentEditor *cnt_editor = context->cnt_editor;
     const gchar *prompt_id = context->prompt_id;
+    MMsgComposerExtension *extension = context->extension;
     
     EContentEditorContentHash *content_hash;
     gchar *content, *new_content;
@@ -155,27 +158,44 @@ msg_text_cb (GObject *source_object,
     content = e_content_editor_util_steal_content_data (content_hash, 
         E_CONTENT_EDITOR_GET_RAW_BODY_HTML, &destroy_func);
     
-    
+    if (content) {
+        gchar *proofread_text = m_chatgpt_proofread(
+            content,
+            prompt_id,
+            extension->priv->prompts,
+            extension->priv->chatgpt_api_key,
+            &error
+        );
 
-    //TODO: sent to CHATGPT and get back the proofread content
-    new_content = g_strdup_printf ("<pre>Poofread with <b>%s</b><pre>\n%s", prompt_id, content ? content : "");
-    
+        if (error) {
+            DEBUG_MSG("ChatGPT API error: %s\n", error->message);
+            g_error_free(error);
+            new_content = g_strdup_printf("<pre>Error during proofreading: %s</pre>", 
+                                        error->message);
+        } else if (proofread_text) {
+            new_content = g_strdup(proofread_text);
+            g_free(proofread_text);
+        } else {
+            new_content = g_strdup("<pre>No response from proofreading service</pre>");
+        }
+    } else {
+        new_content = g_strdup("<pre>No content to proofread</pre>");
+    }
+
     e_content_editor_insert_content (
         cnt_editor,
         new_content,
         E_CONTENT_EDITOR_INSERT_TEXT_HTML | E_CONTENT_EDITOR_INSERT_REPLACE_ALL
     );
 
-	e_content_editor_util_free_content_hash (content_hash);
-    //g_hash_table_unref (content_hash);
+    e_content_editor_util_free_content_hash (content_hash);
     g_free (new_content);
-    // Need to free 'content' if destroy_func is NULL
     if (content && !destroy_func)
         g_free(content);
     else if (content && destroy_func)
         destroy_func(content);
 
-    g_free(context); // Free the context struct
+    g_free(context);
 }
 
 static void
@@ -199,6 +219,7 @@ action_msg_composer_prompt_cb (GtkAction *action,
     struct ProofreadContext *context = g_new(struct ProofreadContext, 1);
     context->cnt_editor = cnt_editor;
     context->prompt_id = prompt_id;
+    context->extension = msg_composer_ext;
 
     DEBUG_MSG("Getting content\n");
     e_content_editor_get_content (
@@ -235,6 +256,7 @@ run_button_clicked_cb (GtkButton *button,
         struct ProofreadContext *context = g_new(struct ProofreadContext, 1);
         context->cnt_editor = cnt_editor;
         context->prompt_id = prompt_id;
+        context->extension = msg_composer_ext;
 
         e_content_editor_get_content (
             cnt_editor,

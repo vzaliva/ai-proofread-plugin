@@ -35,6 +35,7 @@ endfunction()
 pkg_check_modules(EVOLUTION_SHELL REQUIRED evolution-shell-3.0>=${REQUIRE_EVOLUTION_VERSION})
 pkg_check_modules(EVOLUTION_MAIL REQUIRED evolution-mail-3.0>=${REQUIRE_EVOLUTION_VERSION})
 pkg_check_modules(LIBECAL REQUIRED libecal-2.0>=${REQUIRE_EVOLUTION_VERSION})
+pkg_check_modules(LIBSOUP REQUIRED libsoup-3.0)
 
 pkg_check_variable(EVOLUTION_MODULE_DIR evolution-shell-3.0 moduledir)
 
@@ -69,3 +70,24 @@ add_custom_target(
 )
 
 add_subdirectory(src)
+
+set(SOURCES
+    src/ai-proofread-plugin.c
+    src/m-msg-composer-extension.c
+    src/m-chatgpt-api.c)
+
+set(HEADERS
+    src/m-msg-composer-extension.h
+    src/m-chatgpt-api.h)
+
+include_directories(
+    ${EVOLUTION_INCLUDE_DIRS}
+    ${EVOLUTION_SHELL_INCLUDE_DIRS}
+    ${LIBSOUP_INCLUDE_DIRS}
+    ${CMAKE_BINARY_DIR}
+    ${CMAKE_SOURCE_DIR})
+
+target_link_libraries(ai-proofread-plugin
+    ${EVOLUTION_LDFLAGS}
+    ${EVOLUTION_SHELL_LDFLAGS}
+    ${LIBSOUP_LIBRARIES})

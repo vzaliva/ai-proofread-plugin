@@ -8,8 +8,7 @@ proofread the email text using OpenAI's GPT API before sending it.
 
 ```
 $ mkdir _build && cd _build
-$ cmake -DCMAKE_INSTALL_PREFIX=~/.local/share/evolution/modules \
-           -DFORCE_INSTALL_PREFIX=ON ..
+$ cmake -DCMAKE_INSTALL_PREFIX=~/.local/share/evolution/modules -DFORCE_INSTALL_PREFIX=ON ..
 $ make && make install
 ```
 

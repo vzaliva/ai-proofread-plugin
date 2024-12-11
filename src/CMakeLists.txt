@@ -1,33 +1,28 @@
-list(APPEND SOURCES
+set(SOURCES
 	ai-proofread-plugin.c
-	m-msg-composer-extension.h
 	m-msg-composer-extension.c
-)
+	m-chatgpt-api.c)
 
-add_library(ai-proofread-plugin MODULE ${SOURCES})
+set(HEADERS
+	m-msg-composer-extension.h
+	m-chatgpt-api.h)
 
-target_compile_definitions(ai-proofread-plugin PRIVATE
-	G_LOG_DOMAIN=\"ai-proofread-plugin\"
-)
+add_library(ai-proofread-plugin MODULE
+	${SOURCES}
+	${HEADERS})
 
-target_compile_options(ai-proofread-plugin PUBLIC
-	${EVOLUTION_SHELL_CFLAGS}
-	${EVOLUTION_MAIL_CFLAGS}
-	${LIBECAL_CFLAGS}
-)
-
-target_include_directories(ai-proofread-plugin PUBLIC
+target_include_directories(ai-proofread-plugin PRIVATE
+	${EVOLUTION_INCLUDE_DIRS}
 	${EVOLUTION_SHELL_INCLUDE_DIRS}
-	${EVOLUTION_MAIL_INCLUDE_DIRS}
-	${LIBECAL_INCLUDE_DIRS}
-)
+	${LIBSOUP_INCLUDE_DIRS}
+	${CMAKE_BINARY_DIR}
+	${CMAKE_SOURCE_DIR}/src)
 
 target_link_libraries(ai-proofread-plugin
+	${EVOLUTION_LDFLAGS}
 	${EVOLUTION_SHELL_LDFLAGS}
 	${EVOLUTION_MAIL_LDFLAGS}
-	${LIBECAL_LDFLAGS}
-)
+	${LIBSOUP_LIBRARIES})
 
 install(TARGETS ai-proofread-plugin
-	DESTINATION ${EVOLUTION_MODULE_DIR}
-)
+	DESTINATION ${EVOLUTION_MODULE_DIR})
