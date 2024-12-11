@@ -144,24 +144,18 @@ msg_text_cb (GObject *source_object,
         return;
     }
 
-    #ifdef M_MSG_COMPOSER_DEBUG
-    DEBUG_MSG("Hash table size: %d\n", g_hash_table_size(content_hash));
-    DEBUG_MSG("Has text/html: %d\n", g_hash_table_contains(content_hash, "text/html"));
-    DEBUG_MSG("Has text/plain: %d\n", g_hash_table_contains(content_hash, "text/plain"));
-    #endif
-
     content = e_content_editor_util_steal_content_data (content_hash, 
         E_CONTENT_EDITOR_GET_RAW_BODY_HTML, &destroy_func);
     
     DEBUG_MSG("Retrieved content length: %d\n", content ? (int)strlen(content) : 0);
     
-    new_content = g_strdup_printf ("Proofread!\n%s", content ? content : "");
+    new_content = g_strdup_printf ("<pre>Poofread!<pre>\n%s", content ? content : "");
     DEBUG_MSG("Created new content\n");
     
     e_content_editor_insert_content (
         cnt_editor,
         new_content,
-        E_CONTENT_EDITOR_INSERT_TEXT_PLAIN | E_CONTENT_EDITOR_INSERT_REPLACE_ALL
+        E_CONTENT_EDITOR_INSERT_TEXT_HTML | E_CONTENT_EDITOR_INSERT_REPLACE_ALL
     );
 
 	e_content_editor_util_free_content_hash (content_hash);
