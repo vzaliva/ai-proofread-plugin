@@ -170,14 +170,39 @@ msg_text_cb (GObject *source_object,
 
         if (error) {
             DEBUG_MSG("ChatGPT API error: %s\n", error->message);
-            new_content = g_strdup_printf("<pre>Error during proofreading: %s</pre>", 
-                                        error->message);
+            
+            EMsgComposer *composer = E_MSG_COMPOSER(
+                e_extension_get_extensible(E_EXTENSION(extension)));
+            
+            e_alert_submit(
+                E_ALERT_SINK(composer),
+                "ai:error-proofreading",
+                error->message,
+                NULL);
+                
             g_error_free(error);
+            g_free(context);
+            return;
         } else if (proofread_text) {
             new_content = g_strdup(proofread_text);
             g_free(proofread_text);
         } else {
-            new_content = g_strdup("<pre>No response from proofreading service</pre>");
+            // Show dialog for no response case too
+            EMsgComposer *composer = E_MSG_COMPOSER(
+                e_extension_get_extensible(E_EXTENSION(extension)));
+            
+            GtkWidget *dialog = gtk_message_dialog_new(
+                GTK_WINDOW(composer),
+                GTK_DIALOG_MODAL | GTK_DIALOG_DESTROY_WITH_PARENT,
+                GTK_MESSAGE_ERROR,
+                GTK_BUTTONS_OK,
+                _("No response received from proofreading service"));
+                
+            gtk_dialog_run(GTK_DIALOG(dialog));
+            gtk_widget_destroy(dialog);
+                
+            g_free(context);
+            return;
         }
 
         e_content_editor_insert_content (
