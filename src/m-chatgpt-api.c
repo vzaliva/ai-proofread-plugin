@@ -1,17 +1,10 @@
 #include <libsoup/soup.h>
 #include <json-glib/json-glib.h>
 #include "m-chatgpt-api.h"
-
-// Temporary debug flag
-#define M_MSG_COMPOSER_DEBUG 1
-
-#ifdef M_MSG_COMPOSER_DEBUG
-# define DEBUG_MSG(x...) g_print (G_STRLOC ": " x)
-#else
-# define DEBUG_MSG(x...) g_debug (x)
-#endif
+#include "m-version.h"
 
 #define CHATGPT_API_URL "https://api.openai.com/v1/chat/completions"
+#define CHATGPT_API_USER_AGENT "Evolution-AI-Proofread/" AI_PROOFREAD_VERSION " (" AI_PROOFREAD_URL ")"
 
 static const gchar *
 find_prompt_text(JsonArray *prompts, const gchar *prompt_id)
@@ -87,7 +80,7 @@ m_chatgpt_proofread(const gchar *content,
     root = json_builder_get_root(builder);
     json_generator_set_root(generator, root);
     json_data = json_generator_to_data(generator, NULL);
-    DEBUG_MSG("Sending request: %s\n", json_data);
+    g_debug("Sending request: %s", json_data);
 
     // Create HTTP session and message
     session = soup_session_new_with_options(
@@ -109,6 +102,8 @@ m_chatgpt_proofread(const gchar *content,
                               "Authorization", auth_header);
     soup_message_headers_append(soup_message_get_request_headers(msg),
                               "Content-Type", "application/json");
+    soup_message_headers_append(soup_message_get_request_headers(msg),
+                               "User-Agent", CHATGPT_API_USER_AGENT);
     
     // Set request body
     GBytes *request_body = g_bytes_new(json_data, strlen(json_data));
@@ -119,16 +114,16 @@ m_chatgpt_proofread(const gchar *content,
     GBytes *response = NULL;
     GError *local_error = NULL;
     
-    DEBUG_MSG("Sending request to %s\n", CHATGPT_API_URL);
+    g_debug("Sending request to %s", CHATGPT_API_URL);
     response = soup_session_send_and_read(session, msg, NULL, &local_error);
     
     // Check HTTP status code
     guint status_code = soup_message_get_status(msg);
     const char *reason = soup_message_get_reason_phrase(msg);
-    DEBUG_MSG("HTTP Status: %d %s\n", status_code, reason ? reason : "Unknown");
+    g_debug("HTTP Status: %d %s", status_code, reason ? reason : "Unknown");
     
     if (SOUP_STATUS_IS_SUCCESSFUL(status_code)) {
-        DEBUG_MSG("HTTP request successful with status %d\n", status_code);
+        g_debug("HTTP request successful with status %d", status_code);
     } else {
         const char *response_body = "";
         if (response) {
@@ -146,7 +141,7 @@ m_chatgpt_proofread(const gchar *content,
     if (response) {
         gsize response_length;
         const gchar *response_data = g_bytes_get_data(response, &response_length);
-        DEBUG_MSG("Got response: %.*s\n", (int)response_length, response_data);
+        g_debug("Got response: %.*s", (int)response_length, response_data);
         
         // Parse response JSON
         JsonParser *parser = json_parser_new();

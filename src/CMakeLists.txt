@@ -5,7 +5,8 @@ set(SOURCES
 
 set(HEADERS
 	m-msg-composer-extension.h
-	m-chatgpt-api.h)
+	m-chatgpt-api.h
+	m-version.h)
 
 add_library(ai-proofread-plugin MODULE
 	${SOURCES}

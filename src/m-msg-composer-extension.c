@@ -12,14 +12,6 @@
 #include "m-msg-composer-extension.h"
 #include "m-chatgpt-api.h"
 
-// Temporary debug flag
-#define M_MSG_COMPOSER_DEBUG 1
-
-#ifdef M_MSG_COMPOSER_DEBUG
-# define DEBUG_MSG(x...) g_print (G_STRLOC ": " x)
-#else
-# define DEBUG_MSG(x...) g_debug (x)
-#endif
 
 struct _MMsgComposerExtensionPrivate {
 	JsonArray *prompts;  // Array of prompts loaded from config
@@ -45,7 +37,7 @@ load_prompts(void)
 	JsonArray *prompts = NULL;
 	GError *error = NULL;
 
-	DEBUG_MSG("Loading prompts from: %s\n", config_path);
+	g_debug("Loading prompts from: %s", config_path);
 
 	parser = json_parser_new();
 	if (json_parser_load_from_file(parser, config_path, &error)) {
@@ -53,9 +45,9 @@ load_prompts(void)
 		if (JSON_NODE_HOLDS_ARRAY(root)) {
 			prompts = json_array_ref(json_node_get_array(root));
 		}
-		DEBUG_MSG("Prompts loaded: %d\n", json_array_get_length(prompts));
+		g_debug("Prompts loaded: %d", json_array_get_length(prompts));
 	} else {
-		DEBUG_MSG("Error loading prompts: %s\n", error->message);
+		g_warning("Error loading prompts: %s", error->message);
 		g_error_free(error);
 	}
 
@@ -74,7 +66,7 @@ load_api_key(void)
     gchar *api_key = NULL;
     GError *error = NULL;
 
-    DEBUG_MSG("Loading authinfo from: %s\n", authinfo_path);
+    g_debug("Loading authinfo from: %s", authinfo_path);
 
     if (g_file_get_contents(authinfo_path, &content, NULL, &error)) {
         gchar **lines = g_strsplit(content, "\n", -1);
@@ -93,7 +85,7 @@ load_api_key(void)
                 g_strcmp0(tokens[3], "apikey") == 0 &&
                 g_strcmp0(tokens[4], "password") == 0) {
                     api_key = g_strdup(tokens[5]);
-                    DEBUG_MSG("Found API key\n");
+                    g_debug("Found API key");
                     g_strfreev(tokens);
                     break;
             }
@@ -102,7 +94,7 @@ load_api_key(void)
         g_strfreev(lines);
         g_free(content);
     } else {
-        DEBUG_MSG("Error loading authinfo: %s\n", error->message);
+        g_warning("Error loading authinfo: %s", error->message);
         g_error_free(error);
     }
 
@@ -125,17 +117,17 @@ msg_text_cb (GObject *source_object,
     gchar *content, *new_content;
     GError *error = NULL;
 
-    DEBUG_MSG("Getting content finish for prompt: %s\n", prompt_id);
+    g_debug("Getting content finish for prompt: %s", prompt_id);
     content_hash = e_content_editor_get_content_finish (cnt_editor, result, &error);
     if (error) {
-        DEBUG_MSG("Error getting content: %s\n", error->message);
+        g_warning("Error getting content: %s", error->message);
         g_error_free (error);
         g_free(context);
         return;
     }
     
     if (!content_hash) {
-        DEBUG_MSG("No content hash returned\n");
+        g_warning("No content hash returned");
         g_free(context);
         return;
     }
@@ -153,7 +145,7 @@ msg_text_cb (GObject *source_object,
         );
 
         if (error) {
-            DEBUG_MSG("ChatGPT API error: %s\n", error->message);
+            g_warning("ChatGPT API error: %s", error->message);
             
             EMsgComposer *composer = E_MSG_COMPOSER(
                 e_extension_get_extensible(E_EXTENSION(extension)));
@@ -208,7 +200,7 @@ action_msg_composer_prompt_cb (GtkAction *action,
                              MMsgComposerExtension *msg_composer_ext)
 {
     const gchar *prompt_id = gtk_action_get_name(action);
-    DEBUG_MSG("Action callback triggered for prompt: %s\n", prompt_id);
+    g_debug("Action callback triggered for prompt: %s", prompt_id);
     
     EMsgComposer *composer;
     EHTMLEditor *editor;    
@@ -226,7 +218,7 @@ action_msg_composer_prompt_cb (GtkAction *action,
     context->prompt_id = prompt_id;
     context->extension = msg_composer_ext;
 
-    DEBUG_MSG("Getting content\n");
+    g_debug("Getting content");
     e_content_editor_get_content (
         cnt_editor,
         E_CONTENT_EDITOR_GET_TO_SEND_PLAIN,
@@ -245,7 +237,7 @@ run_button_clicked_cb (GtkButton *button,
     const gchar *prompt_id = gtk_combo_box_get_active_id(GTK_COMBO_BOX(combo));
     
     if (prompt_id) {
-        DEBUG_MSG("Run button clicked with active selection: %s\n", prompt_id);
+        g_debug("Run button clicked with active selection: %s", prompt_id);
         
         EMsgComposer *composer;
         EHTMLEditor *editor;    
@@ -284,12 +276,12 @@ m_msg_composer_extension_add_ui (MMsgComposerExtension *msg_composer_ext,
     // Check if we have any prompts
     if (!msg_composer_ext->priv->prompts || 
         json_array_get_length(msg_composer_ext->priv->prompts) == 0) {
-        DEBUG_MSG("No prompts configured, skipping UI creation\n");
+        g_warning("No prompts configured, skipping UI creation");
         return;
     }
 
     if(!msg_composer_ext->priv->chatgpt_api_key) {
-        DEBUG_MSG("No API key configured, skipping UI creation\n");
+        g_warning("No API key configured, skipping UI creation");
         return;
     }   
 
