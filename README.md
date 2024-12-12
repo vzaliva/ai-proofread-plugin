@@ -26,6 +26,12 @@ Example:
 
 (see `prompts.json` for more examples)
 
+## Usage
+
+Afer installing the plugin, you can use it in Evolution by selecting the prompt from the toolbar combo box and clicking the "AI Proofread" button in the message composition toolbar or using File->AI Proofread menu item.
+
+Currently it inserts the proofread text into the message body at the cursor position. If you want to replace the original text, you need to select the text and click the "AI Proofread" button.
+
 ## Building
 
 ```
