@@ -140,23 +140,24 @@ msg_text_cb (GObject *source_object,
     EContentEditorContentHash *content_hash;
     gchar *content, *new_content;
     GError *error = NULL;
-    GDestroyNotify destroy_func = NULL;
 
     DEBUG_MSG("Getting content finish for prompt: %s\n", prompt_id);
     content_hash = e_content_editor_get_content_finish (cnt_editor, result, &error);
     if (error) {
         DEBUG_MSG("Error getting content: %s\n", error->message);
         g_error_free (error);
+        g_free(context);
         return;
     }
     
     if (!content_hash) {
         DEBUG_MSG("No content hash returned\n");
+        g_free(context);
         return;
     }
 
     content = e_content_editor_util_steal_content_data (content_hash, 
-        E_CONTENT_EDITOR_GET_RAW_BODY_HTML, &destroy_func);
+        E_CONTENT_EDITOR_GET_TO_SEND_PLAIN, NULL);
     
     if (content) {
         gchar *proofread_text = m_chatgpt_proofread(
@@ -169,32 +170,27 @@ msg_text_cb (GObject *source_object,
 
         if (error) {
             DEBUG_MSG("ChatGPT API error: %s\n", error->message);
-            g_error_free(error);
             new_content = g_strdup_printf("<pre>Error during proofreading: %s</pre>", 
                                         error->message);
+            g_error_free(error);
         } else if (proofread_text) {
             new_content = g_strdup(proofread_text);
             g_free(proofread_text);
         } else {
             new_content = g_strdup("<pre>No response from proofreading service</pre>");
         }
-    } else {
-        new_content = g_strdup("<pre>No content to proofread</pre>");
+
+        e_content_editor_insert_content (
+            cnt_editor,
+            new_content,
+            E_CONTENT_EDITOR_INSERT_TEXT_PLAIN | E_CONTENT_EDITOR_INSERT_FROM_PLAIN_TEXT
+        );
+
+        g_free(new_content);  // Free new_content after insertion
+        g_free(content);
     }
 
-    e_content_editor_insert_content (
-        cnt_editor,
-        new_content,
-        E_CONTENT_EDITOR_INSERT_TEXT_HTML | E_CONTENT_EDITOR_INSERT_REPLACE_ALL
-    );
-
     e_content_editor_util_free_content_hash (content_hash);
-    g_free (new_content);
-    if (content && !destroy_func)
-        g_free(content);
-    else if (content && destroy_func)
-        destroy_func(content);
-
     g_free(context);
 }
 
@@ -224,7 +220,7 @@ action_msg_composer_prompt_cb (GtkAction *action,
     DEBUG_MSG("Getting content\n");
     e_content_editor_get_content (
         cnt_editor,
-        E_CONTENT_EDITOR_GET_RAW_BODY_HTML,
+        E_CONTENT_EDITOR_GET_TO_SEND_PLAIN,
         NULL,
         NULL,
         msg_text_cb,
@@ -260,7 +256,7 @@ run_button_clicked_cb (GtkButton *button,
 
         e_content_editor_get_content (
             cnt_editor,
-            E_CONTENT_EDITOR_GET_RAW_BODY_HTML,
+            E_CONTENT_EDITOR_GET_TO_SEND_PLAIN,
             NULL,
             NULL,
             msg_text_cb,
