@@ -4,6 +4,8 @@ This plugin adds a "AI Proofread" button to the message composition
 toolbar of the Evolution email client. The button allows you to
 proofread the email text using OpenAI's GPT API before sending it.
 
+![Screenshot](screenshot.png)
+
 ## Configuration
 
 You need to set your OpenAI API key in the authinfo file. The format of the file is:
