@@ -6,9 +6,9 @@
 #define M_MSG_COMPOSER_DEBUG 1
 
 #ifdef M_MSG_COMPOSER_DEBUG
-#define DEBUG_MSG(x...) g_print (G_STRLOC ": " x)
+# define DEBUG_MSG(x...) g_print (G_STRLOC ": " x)
 #else
-#define DEBUG_MSG(x...)
+# define DEBUG_MSG(x...) g_debug (x)
 #endif
 
 #define CHATGPT_API_URL "https://api.openai.com/v1/chat/completions"

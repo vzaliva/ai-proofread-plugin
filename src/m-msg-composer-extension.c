@@ -1,19 +1,3 @@
-/*
- * Copyright (C) 2016 Red Hat, Inc. (www.redhat.com)
- *
- * This library is free software: you can redistribute it and/or modify it
- * under the terms of the GNU Lesser General Public License as published by
- * the Free Software Foundation.
- *
- * This library is distributed in the hope that it will be useful, but
- * WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
- * or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License
- * for more details.
- *
- * You should have received a copy of the GNU Lesser General Public License
- * along with this library. If not, see <http://www.gnu.org/licenses/>.
- */
-
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -32,9 +16,9 @@
 #define M_MSG_COMPOSER_DEBUG 1
 
 #ifdef M_MSG_COMPOSER_DEBUG
-#define DEBUG_MSG(x...) g_print (G_STRLOC ": " x)
+# define DEBUG_MSG(x...) g_print (G_STRLOC ": " x)
 #else
-#define DEBUG_MSG(x...)
+# define DEBUG_MSG(x...) g_debug (x)
 #endif
 
 struct _MMsgComposerExtensionPrivate {
