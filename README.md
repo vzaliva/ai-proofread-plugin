@@ -63,7 +63,7 @@ Some ideas:
 
 ## License
 
-This plugin is open-source and licensed under the LGPL License.
+This plugin is open-source and licensed under the GPL License.
 
 ## Author
 
