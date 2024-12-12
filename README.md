@@ -42,15 +42,26 @@ $ make && make install
 
 ## Development
 
-To use under vscode first generate compile_commands.json:
+To use under vscode first generate `compile_commands.json`:
 
 ```
 $ cmake -DCMAKE_EXPORT_COMPILE_COMMANDS=ON .
 ```
 
+## Futurue plans
+
+I primarily use this plugin myself, so the features are tuned for my needs. However I'm open to suggestions and pull requests.
+Some ideas:
+
+- Replace all reply text with the proofread text withou need to select it first.
+- UI for configuring prompts.
+- Support for other LLM providers (e.g. Anthropic).
+- UI for configuring LLM provider keys and other options (e.g. model, temperature, etc.).
+- Package for Ubuntu and other distros.
+
 ## License
 
-This plugin is open-source and licensed under the MIT License.
+This plugin is open-source and licensed under the LGPL License.
 
 ## Author
 
